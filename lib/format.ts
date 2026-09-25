@@ -14,21 +14,19 @@ const integerFormatter = new Intl.NumberFormat("en-US", {
 
 const safe = (value: number) => (Number.isFinite(value) ? value : 0);
 
-/** ฿1,250,000 — whole baht, sign in front of the symbol for negatives. */
+/** 1,250,000 — whole baht, no currency symbol. */
 export function formatTHB(value: number): string {
-  const n = Math.round(safe(value));
-  const body = `฿${integerFormatter.format(Math.abs(n))}`;
-  return n < 0 ? `-${body}` : body;
+  return integerFormatter.format(Math.round(safe(value)));
 }
 
-/** ฿1.25M / ฿350K — for chart axes where space is tight. */
+/** 1.25M / 350K — for chart axes where space is tight. */
 export function formatCompactTHB(value: number): string {
   const n = safe(value);
   const abs = Math.abs(n);
   const sign = n < 0 ? "-" : "";
-  if (abs >= 1_000_000) return `${sign}฿${trim(abs / 1_000_000)}M`;
-  if (abs >= 1_000) return `${sign}฿${trim(abs / 1_000)}K`;
-  return `${sign}฿${Math.round(abs)}`;
+  if (abs >= 1_000_000) return `${sign}${trim(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}${trim(abs / 1_000)}K`;
+  return `${sign}${Math.round(abs)}`;
 }
 
 function trim(n: number): string {

@@ -106,6 +106,6 @@ lib/
 ├── google-sheet.ts           Fetch and cache the CSV (server only)
 ├── normalize.ts              parseNumber, parseDate, parsePeriod, header detection, normalizeTransaction
 ├── pnl-calculation.ts        calculateMonthlyPnl, calculateTotals, margin helpers
-├── format.ts                 ฿ currency, %, dates
+├── format.ts                 Amounts (no currency symbol), %, dates
 └── types.ts                  Shared types
 ```

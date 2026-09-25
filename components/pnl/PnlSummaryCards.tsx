@@ -27,14 +27,14 @@ export function PnlSummaryCards({
       label: "Margin",
       value: formatTHB(figures.margin),
       icon: TrendingUp,
-      accent: "bg-margin",
+      accent: "bg-foreground/60",
       negative: figures.margin < 0,
     },
     {
       label: "% Margin",
       value: formatPercent(figures.marginPct),
       icon: Percent,
-      accent: "bg-foreground/60",
+      accent: "bg-margin",
       negative: figures.marginPct < 0,
     },
   ];

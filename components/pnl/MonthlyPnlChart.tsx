@@ -20,7 +20,7 @@ import type { MonthlyPnlRow } from "@/lib/types";
 const SERIES = [
   { key: "revenue", label: "Revenue", color: "var(--series-revenue)", kind: "bar" },
   { key: "cost", label: "Cost", color: "var(--series-cost)", kind: "bar" },
-  { key: "margin", label: "Margin", color: "var(--series-margin)", kind: "line" },
+  { key: "marginPctPlot", label: "Margin %", color: "var(--series-margin)", kind: "line" },
 ] as const;
 
 export function MonthlyPnlChart({
@@ -33,13 +33,17 @@ export function MonthlyPnlChart({
   selectedMonth: number | null;
 }) {
   const hasData = rows.some((r) => r.transactionCount > 0);
+  // Months without revenue have no meaningful margin %: leave a gap, not a 0% dip.
+  const data = rows.map((r) => ({ ...r, marginPctPlot: r.revenue ? r.marginPct : null }));
 
   return (
     <Card className="shadow-sm ring-foreground/[0.07]">
       <CardHeader className="flex flex-col gap-3 px-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle className="text-base font-semibold">Monthly P&amp;L Progress</CardTitle>
-          <CardDescription>Revenue, cost and margin by month · {year}</CardDescription>
+          <CardDescription>
+            Revenue and cost (left axis) with margin % (right axis) by month · {year}
+          </CardDescription>
         </div>
         <Legend />
       </CardHeader>
@@ -49,8 +53,8 @@ export function MonthlyPnlChart({
             <div className="h-[340px] min-w-[720px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
-                  data={rows}
-                  margin={{ top: 12, right: 16, bottom: 0, left: 8 }}
+                  data={data}
+                  margin={{ top: 12, right: 8, bottom: 0, left: 8 }}
                   barGap={2}
                   barCategoryGap="22%"
                 >
@@ -62,13 +66,23 @@ export function MonthlyPnlChart({
                     tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                   />
                   <YAxis
+                    yAxisId="amount"
                     tickFormatter={formatCompactTHB}
                     tickLine={false}
                     axisLine={false}
                     width={64}
                     tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                   />
-                  <ReferenceLine y={0} stroke="var(--muted-foreground)" strokeOpacity={0.4} />
+                  <YAxis
+                    yAxisId="pct"
+                    orientation="right"
+                    tickFormatter={(v: number) => `${v}%`}
+                    tickLine={false}
+                    axisLine={false}
+                    width={48}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  />
+                  <ReferenceLine yAxisId="amount" y={0} stroke="var(--muted-foreground)" strokeOpacity={0.4} />
                   <Tooltip
                     content={(props) => <PnlTooltip {...props} year={year} />}
                     cursor={{ fill: "var(--muted)", opacity: 0.7 }}
@@ -79,6 +93,7 @@ export function MonthlyPnlChart({
                         key={s.key}
                         dataKey={s.key}
                         name={s.label}
+                        yAxisId="amount"
                         fill={s.color}
                         radius={[4, 4, 0, 0]}
                         maxBarSize={28}
@@ -96,7 +111,9 @@ export function MonthlyPnlChart({
                         key={s.key}
                         dataKey={s.key}
                         name={s.label}
+                        yAxisId="pct"
                         type="monotone"
+                        connectNulls={false}
                         isAnimationActive={false}
                         stroke={s.color}
                         strokeWidth={2}

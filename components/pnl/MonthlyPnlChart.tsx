@@ -4,6 +4,7 @@ import {
   Bar,
   CartesianGrid,
   Cell,
+  LabelList,
   ComposedChart,
   Line,
   ReferenceLine,
@@ -11,6 +12,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type LabelProps,
   type TooltipContentProps,
 } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,11 +52,11 @@ export function MonthlyPnlChart({
       <CardContent className="px-2 sm:px-4">
         {hasData ? (
           <div className="overflow-x-auto">
-            <div className="h-[340px] min-w-[720px]">
+            <div className="h-[380px] min-w-[760px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart
                   data={data}
-                  margin={{ top: 12, right: 8, bottom: 0, left: 8 }}
+                  margin={{ top: 28, right: 8, bottom: 0, left: 8 }}
                   barGap={2}
                   barCategoryGap="22%"
                 >
@@ -105,6 +107,7 @@ export function MonthlyPnlChart({
                             fillOpacity={selectedMonth && r.month !== selectedMonth ? 0.3 : 1}
                           />
                         ))}
+                        <LabelList dataKey={s.key} content={BarValueLabel} />
                       </Bar>
                     ) : (
                       <Line
@@ -119,7 +122,9 @@ export function MonthlyPnlChart({
                         strokeWidth={2}
                         dot={{ r: 4, fill: s.color, stroke: "var(--card)", strokeWidth: 2 }}
                         activeDot={{ r: 5, stroke: "var(--card)", strokeWidth: 2 }}
-                      />
+                      >
+                        <LabelList dataKey={s.key} content={PercentLabel} />
+                      </Line>
                     ),
                   )}
                 </ComposedChart>
@@ -133,6 +138,77 @@ export function MonthlyPnlChart({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Compact amount for a bar. Written vertically inside the bar so it avoids
+ * collides with the margin % pills; bars too short to hold it get it on top.
+ */
+function BarValueLabel({ x, y, width, height, value }: LabelProps) {
+  const n = Number(value);
+  if (!n || x == null || y == null || width == null || height == null) return null;
+  const text = formatCompactTHB(n);
+  const cx = Number(x) + Number(width) / 2;
+  const top = Number(y);
+  const fitsInside = Math.abs(Number(height)) >= text.length * 6 + 10;
+
+  if (!fitsInside) {
+    return (
+      <text x={cx} y={top - 5} textAnchor="middle" fontSize={10} fill="var(--muted-foreground)">
+        {text}
+      </text>
+    );
+  }
+  // Anchored at the bar's base, where the margin % pills rarely reach.
+  const base = top + Number(height) - 6;
+  return (
+    <text
+      x={cx}
+      y={base}
+      transform={`rotate(-90 ${cx} ${base})`}
+      textAnchor="start"
+      dominantBaseline="central"
+      fontSize={10}
+      fontWeight={600}
+      fill="#fff"
+    >
+      {text}
+    </text>
+  );
+}
+
+/** Margin % above each point, on a pill so it stays legible over bars. */
+function PercentLabel({ x, y, value }: LabelProps) {
+  if (value == null || x == null || y == null) return null;
+  const text = formatPercent(Number(value));
+  const w = text.length * 6 + 10;
+  const cx = Number(x);
+  const top = Number(y) - 24;
+  return (
+    <g>
+      <rect
+        x={cx - w / 2}
+        y={top}
+        width={w}
+        height={16}
+        rx={8}
+        fill="var(--card)"
+        stroke="var(--series-margin)"
+        strokeWidth={1}
+      />
+      <text
+        x={cx}
+        y={top + 11.5}
+        textAnchor="middle"
+        fontSize={10}
+        fontWeight={600}
+        fill="var(--foreground)"
+        className="tabular-nums"
+      >
+        {text}
+      </text>
+    </g>
   );
 }
 

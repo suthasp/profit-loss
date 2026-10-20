@@ -246,7 +246,7 @@ function PnlTooltip({
   const lines = [
     { label: "Revenue", value: formatTHB(row.revenue), color: SERIES[0].color },
     { label: "Cost", value: formatTHB(row.cost), color: SERIES[1].color },
-    { label: "Margin", value: formatTHB(row.margin), color: SERIES[2].color },
+    { label: "EBITDA", value: formatTHB(row.margin), color: SERIES[2].color },
     { label: "Margin %", value: formatPercent(row.marginPct), color: null },
   ];
 

@@ -24,7 +24,7 @@ export function PnlSummaryCards({
     { label: "Revenue", value: formatTHB(figures.revenue), icon: Coins, accent: "bg-revenue" },
     { label: "Cost", value: formatTHB(figures.cost), icon: Receipt, accent: "bg-cost" },
     {
-      label: "Margin",
+      label: "EBITDA",
       value: formatTHB(figures.margin),
       icon: TrendingUp,
       accent: "bg-foreground/60",

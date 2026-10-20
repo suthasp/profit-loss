@@ -38,7 +38,7 @@ export function MonthlyPnlTable({
               <TableHead className="pl-5">Month</TableHead>
               <TableHead className="text-right">Revenue</TableHead>
               <TableHead className="text-right">Cost</TableHead>
-              <TableHead className="text-right">Margin</TableHead>
+              <TableHead className="text-right">EBITDA</TableHead>
               <TableHead className="pr-5 text-right">% Margin</TableHead>
             </TableRow>
           </TableHeader>

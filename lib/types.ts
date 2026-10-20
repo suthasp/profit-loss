@@ -9,8 +9,9 @@ export interface Period {
  * - included:       has a valid month and is counted
  * - unscheduled:    the month cell is blank, so it can't be placed in a month
  * - invalid-period: the month cell has a value that couldn't be parsed
+ * - cancelled:      the month cell marks the PO as cancelled (e.g. "ยกเลิก PO")
  */
-export type TransactionStatus = "included" | "unscheduled" | "invalid-period";
+export type TransactionStatus = "included" | "unscheduled" | "invalid-period" | "cancelled";
 
 export interface Transaction {
   /** Stable id for tables/keys (sheet row number as string). */
@@ -49,6 +50,7 @@ export interface NormalizationStats {
   skippedSummaryRows: number;
   unscheduledRows: number;
   invalidPeriodRows: number;
+  cancelledRows: number;
 }
 
 export interface PnlSuccessResponse {

@@ -248,6 +248,9 @@ export function dedupeHeaders(rawHeaders: string[]): string[] {
 /*  Row normalization                                                         */
 /* -------------------------------------------------------------------------- */
 
+/** A month cell such as "ยกเลิก PO" or "Cancelled" marks the row as cancelled. */
+const CANCELLED_CELL = /ยกเลิก|cancel/i;
+
 const SUMMARY_CELL = /^(grand\s*)?total$|^sub\s*total$|^รวม(ทั้งสิ้น|ทั้งหมด)?$/i;
 
 type RowKind = "empty" | "summary" | "data";
@@ -293,7 +296,13 @@ export function normalizeTransaction(
     status = previous.status;
   } else {
     period = parsePeriod(periodCell);
-    status = period ? "included" : periodCell ? "invalid-period" : "unscheduled";
+    status = period
+      ? "included"
+      : CANCELLED_CELL.test(periodCell)
+        ? "cancelled"
+        : periodCell
+          ? "invalid-period"
+          : "unscheduled";
   }
 
   return {
@@ -336,6 +345,7 @@ export function normalizeSheet(rows: string[][]): NormalizedSheet {
     skippedSummaryRows: 0,
     unscheduledRows: 0,
     invalidPeriodRows: 0,
+    cancelledRows: 0,
   };
 
   const transactions: Transaction[] = [];
@@ -367,6 +377,7 @@ export function normalizeSheet(rows: string[][]): NormalizedSheet {
     else previous = tx;
     if (tx.status === "unscheduled") stats.unscheduledRows++;
     if (tx.status === "invalid-period") stats.invalidPeriodRows++;
+    if (tx.status === "cancelled") stats.cancelledRows++;
   }
 
   stats.transactions = transactions.length;

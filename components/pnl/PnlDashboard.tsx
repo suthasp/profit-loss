@@ -89,8 +89,8 @@ export function PnlDashboard() {
   const summary = useMemo(() => calculateSummary(monthly, selectedMonth), [monthly, selectedMonth]);
   const yearTotal = useMemo(() => calculateTotals(monthly), [monthly]);
   const poSummary = useMemo(
-    () => (data ? calculatePoSummary(data.transactions, data.columns, activeYear, selectedMonth) : null),
-    [data, activeYear, selectedMonth],
+    () => (data ? calculatePoSummary(data.transactions, data.columns) : null),
+    [data],
   );
 
   const excluded = useMemo(() => {
@@ -182,7 +182,9 @@ export function PnlDashboard() {
 
       <PnlSummaryCards figures={summary} periodLabel={periodLabel} />
 
-      {poSummary && <PoSummaryCards summary={poSummary} periodLabel={periodLabel} />}
+      {poSummary && (
+        <PoSummaryCards summary={poSummary} cancelledRows={data.stats.cancelledRows} />
+      )}
 
       <MonthlyPnlChart rows={monthly} year={activeYear} selectedMonth={selectedMonth} />
 
@@ -200,8 +202,8 @@ export function PnlDashboard() {
             {excluded.count} row{excluded.count === 1 ? "" : "s"} not included in the monthly P&amp;L
           </AlertTitle>
           <AlertDescription>
-            These rows have a blank or unreadable &lsquo;{data.columns.period}&rsquo; value, so they
-            can&rsquo;t be placed in a month ({formatTHB(excluded.revenue)} revenue). Choose
+            These rows have a blank, unreadable or cancelled &lsquo;{data.columns.period}&rsquo;
+            value, so they can&rsquo;t be placed in a month ({formatTHB(excluded.revenue)} revenue). Choose
             &ldquo;No month&rdquo; under Transaction Details to review them.
           </AlertDescription>
         </Alert>

@@ -83,6 +83,7 @@ function detectNumericHeaders(headers: string[], rows: Transaction[]): Set<strin
 
 function periodLabel(tx: Transaction): string {
   if (tx.period) return formatPeriodShort(tx.period.year, tx.period.month);
+  if (tx.status === "cancelled") return "Cancelled";
   return tx.status === "invalid-period" ? "Invalid month" : "No month";
 }
 

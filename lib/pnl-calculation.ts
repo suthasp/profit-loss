@@ -78,23 +78,21 @@ export function calculateSummary(monthly: MonthlyPnlRow[], month: number | null)
 }
 
 /**
- * PO billing status for the selected year and optional month.
+ * PO billing status across the whole sheet, whatever the month or year.
  * A PO is counted once however many rows it spans, and is "invoiced" when any
- * of its rows has an invoice number. Rows without a PO number are ignored.
+ * of its rows has an invoice number. Cancelled rows and rows without a PO
+ * number are ignored.
  */
 export function calculatePoSummary(
   transactions: Transaction[],
   columns: Pick<DetectedColumns, "poNumber" | "invoiceNumber">,
-  year: number,
-  month: number | null,
 ): PoSummary | null {
   const { poNumber, invoiceNumber } = columns;
   if (!poNumber || !invoiceNumber) return null;
 
   const pos = new Map<string, { revenue: number; invoiced: boolean }>();
   for (const tx of transactions) {
-    if (!isCountable(tx) || tx.period.year !== year) continue;
-    if (month !== null && tx.period.month !== month) continue;
+    if (tx.status === "cancelled") continue;
     const po = tx.raw[poNumber]?.trim();
     if (!po) continue;
     const entry = pos.get(po) ?? { revenue: 0, invoiced: false };

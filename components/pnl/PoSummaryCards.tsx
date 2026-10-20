@@ -13,10 +13,10 @@ interface StatSpec {
 /** Unique POs and how many have been invoiced (have an Invoice No.). */
 export function PoSummaryCards({
   summary,
-  periodLabel,
+  cancelledRows,
 }: {
   summary: PoSummary;
-  periodLabel: string;
+  cancelledRows: number;
 }) {
   const stats: StatSpec[] = [
     {
@@ -70,8 +70,10 @@ export function PoSummaryCards({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              {summary.invoicedCount} of {summary.poCount} POs invoiced · {periodLabel} · counted
-              by unique PO No.; invoiced = has an Invoice No.
+              {summary.invoicedCount} of {summary.poCount} POs invoiced · All POs in the sheet
+              (not filtered by year/month) · counted by unique PO No.; invoiced = has an Invoice No.
+              {cancelledRows > 0 &&
+                ` · ${cancelledRows} cancelled row${cancelledRows === 1 ? "" : "s"} excluded`}
             </p>
           </div>
         </CardContent>

@@ -1,5 +1,11 @@
 import { MONTH_SHORT } from "./format";
-import type { MonthlyPnlRow, PnlFigures, Transaction } from "./types";
+import type {
+  DetectedColumns,
+  MonthlyPnlRow,
+  PnlFigures,
+  PoSummary,
+  Transaction,
+} from "./types";
 
 /** Margin = Revenue − Cost */
 export function calculateMargin(revenue: number, cost: number): number {
@@ -69,4 +75,53 @@ export function calculateTotals(rows: Pick<PnlFigures, "revenue" | "cost">[]): P
 /** Summary for the selected year and optional month (null = all months). */
 export function calculateSummary(monthly: MonthlyPnlRow[], month: number | null): PnlFigures {
   return calculateTotals(month === null ? monthly : monthly.filter((r) => r.month === month));
+}
+
+/**
+ * PO billing status for the selected year and optional month.
+ * A PO is counted once however many rows it spans, and is "invoiced" when any
+ * of its rows has an invoice number. Rows without a PO number are ignored.
+ */
+export function calculatePoSummary(
+  transactions: Transaction[],
+  columns: Pick<DetectedColumns, "poNumber" | "invoiceNumber">,
+  year: number,
+  month: number | null,
+): PoSummary | null {
+  const { poNumber, invoiceNumber } = columns;
+  if (!poNumber || !invoiceNumber) return null;
+
+  const pos = new Map<string, { revenue: number; invoiced: boolean }>();
+  for (const tx of transactions) {
+    if (!isCountable(tx) || tx.period.year !== year) continue;
+    if (month !== null && tx.period.month !== month) continue;
+    const po = tx.raw[poNumber]?.trim();
+    if (!po) continue;
+    const entry = pos.get(po) ?? { revenue: 0, invoiced: false };
+    entry.revenue += tx.revenue;
+    if (tx.raw[invoiceNumber]?.trim()) entry.invoiced = true;
+    pos.set(po, entry);
+  }
+
+  let invoicedCount = 0;
+  let poRevenue = 0;
+  let invoicedRevenue = 0;
+  for (const { revenue, invoiced } of pos.values()) {
+    poRevenue += revenue;
+    if (invoiced) {
+      invoicedCount++;
+      invoicedRevenue += revenue;
+    }
+  }
+
+  const poCount = pos.size;
+  return {
+    poCount,
+    invoicedCount,
+    notInvoicedCount: poCount - invoicedCount,
+    invoicedPct: poCount ? (invoicedCount / poCount) * 100 : 0,
+    poRevenue,
+    invoicedRevenue,
+    notInvoicedRevenue: poRevenue - invoicedRevenue,
+  };
 }

@@ -16,12 +16,14 @@ import {
 import { formatDateTime, formatTHB, MONTH_LONG } from "@/lib/format";
 import {
   calculateMonthlyPnl,
+  calculatePoSummary,
   calculateSummary,
   calculateTotals,
   getAvailableYears,
 } from "@/lib/pnl-calculation";
 import type { PnlApiResponse, PnlSuccessResponse } from "@/lib/types";
 import { PnlSummaryCards } from "./PnlSummaryCards";
+import { PoSummaryCards } from "./PoSummaryCards";
 import { MonthlyPnlChart } from "./MonthlyPnlChart";
 import { MonthlyPnlTable } from "./MonthlyPnlTable";
 import { TransactionTable } from "./TransactionTable";
@@ -86,6 +88,10 @@ export function PnlDashboard() {
   );
   const summary = useMemo(() => calculateSummary(monthly, selectedMonth), [monthly, selectedMonth]);
   const yearTotal = useMemo(() => calculateTotals(monthly), [monthly]);
+  const poSummary = useMemo(
+    () => (data ? calculatePoSummary(data.transactions, data.columns, activeYear, selectedMonth) : null),
+    [data, activeYear, selectedMonth],
+  );
 
   const excluded = useMemo(() => {
     if (!data) return null;
@@ -175,6 +181,8 @@ export function PnlDashboard() {
       )}
 
       <PnlSummaryCards figures={summary} periodLabel={periodLabel} />
+
+      {poSummary && <PoSummaryCards summary={poSummary} periodLabel={periodLabel} />}
 
       <MonthlyPnlChart rows={monthly} year={activeYear} selectedMonth={selectedMonth} />
 

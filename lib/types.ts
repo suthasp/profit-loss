@@ -35,6 +35,10 @@ export interface DetectedColumns {
   revenue: string;
   cost: string;
   description: string | null;
+  /** Purchase order number column, if present. */
+  poNumber: string | null;
+  /** Invoice number column, if present. A PO with an invoice number has been billed. */
+  invoiceNumber: string | null;
 }
 
 export interface NormalizationStats {
@@ -68,6 +72,19 @@ export interface PnlFigures {
   cost: number;
   margin: number;
   marginPct: number;
+}
+
+export interface PoSummary {
+  /** Unique PO numbers in the period. */
+  poCount: number;
+  /** Unique POs that have an invoice number on at least one of their rows. */
+  invoicedCount: number;
+  notInvoicedCount: number;
+  /** Share of POs (by count) that are invoiced, 0–100. */
+  invoicedPct: number;
+  poRevenue: number;
+  invoicedRevenue: number;
+  notInvoicedRevenue: number;
 }
 
 export interface MonthlyPnlRow extends PnlFigures {

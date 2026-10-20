@@ -165,17 +165,31 @@ const COLUMN_ALIASES = {
     "description", "project name description", "project name", "project",
     "รายละเอียด", "รายการ", "detail", "details",
   ],
+  poNumber: [
+    "po no", "po number", "po", "purchase order", "purchase order no", "เลขที่ po", "เลข po",
+  ],
+  invoiceNumber: [
+    "invoice no", "invoice number", "invoice", "inv no", "เลขที่ invoice",
+    "เลขที่ใบแจ้งหนี้", "เลขที่ใบกำกับภาษี",
+  ],
 } as const;
 
 /** Headers that mention a keyword but are clearly not the value column. */
 const EXCLUDED_HEADER = /margin|หมายเหตุ|note|remark|comment|%/i;
+
+/** Identifier columns must not resolve to their date/amount/payment neighbours. */
+const EXCLUDED_ID_HEADER = /date|amount|payment|due|วันที่|ยอด|จำนวนเงิน|%/i;
 
 /** Display names used in error messages, as the requirement specifies. */
 const REQUIRED_LABEL = { period: "Date", revenue: "Revenue", cost: "Cost" } as const;
 
 export class SheetFormatError extends Error {}
 
-function findColumn(headers: string[], aliases: readonly string[]): string | null {
+function findColumn(
+  headers: string[],
+  aliases: readonly string[],
+  exclude: RegExp = EXCLUDED_HEADER,
+): string | null {
   const normalized = headers.map((h) => ({ header: h, key: normalizeHeader(h) }));
 
   // 1. Exact match, alias order = priority.
@@ -188,7 +202,7 @@ function findColumn(headers: string[], aliases: readonly string[]): string | nul
   for (const alias of aliases) {
     const pattern = new RegExp(`(^|\\s)${alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`);
     const hit = normalized.find(
-      (h) => !EXCLUDED_HEADER.test(h.header) && pattern.test(h.key),
+      (h) => !exclude.test(h.header) && pattern.test(h.key),
     );
     if (hit) return hit.header;
   }
@@ -214,6 +228,8 @@ export function detectColumns(headers: string[]): DetectedColumns {
     revenue: revenue!,
     cost: cost!,
     description: findColumn(headers, COLUMN_ALIASES.description),
+    poNumber: findColumn(headers, COLUMN_ALIASES.poNumber, EXCLUDED_ID_HEADER),
+    invoiceNumber: findColumn(headers, COLUMN_ALIASES.invoiceNumber, EXCLUDED_ID_HEADER),
   };
 }
 

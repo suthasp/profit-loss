@@ -165,6 +165,7 @@ const COLUMN_ALIASES = {
     "description", "project name description", "project name", "project",
     "รายละเอียด", "รายการ", "detail", "details",
   ],
+  site: ["site name", "site", "ไซต์", "ชื่อไซต์", "สถานที่", "location"],
   poNumber: [
     "po no", "po number", "po", "purchase order", "purchase order no", "เลขที่ po", "เลข po",
   ],
@@ -228,6 +229,7 @@ export function detectColumns(headers: string[]): DetectedColumns {
     revenue: revenue!,
     cost: cost!,
     description: findColumn(headers, COLUMN_ALIASES.description),
+    site: findColumn(headers, COLUMN_ALIASES.site, EXCLUDED_ID_HEADER),
     poNumber: findColumn(headers, COLUMN_ALIASES.poNumber, EXCLUDED_ID_HEADER),
     invoiceNumber: findColumn(headers, COLUMN_ALIASES.invoiceNumber, EXCLUDED_ID_HEADER),
   };
@@ -281,6 +283,7 @@ export function normalizeTransaction(
   const cost = parseNumber(record[columns.cost]);
   const periodCell = record[columns.period] ?? "";
   const description = columns.description ? record[columns.description] ?? "" : "";
+  const siteCell = columns.site ? (record[columns.site] ?? "").replace(/\s+/g, " ").trim() : "";
 
   if (revenue === null && cost === null && !description) return null;
 
@@ -313,6 +316,7 @@ export function normalizeTransaction(
     revenue: revenue ?? 0,
     cost: cost ?? 0,
     isContinuation,
+    site: isContinuation ? previous.site : siteCell || null,
     raw: record,
   };
 }

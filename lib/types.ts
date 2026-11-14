@@ -27,6 +27,11 @@ export interface Transaction {
    * sub-contractor) for the transaction above it. It inherits that row's period.
    */
   isContinuation: boolean;
+  /**
+   * Site name, whitespace-trimmed. Continuation rows inherit the site of the
+   * row above. Null when the sheet has no site column or the cell is blank.
+   */
+  site: string | null;
   /** Original cell values keyed by (de-duplicated) sheet header. */
   raw: Record<string, string>;
 }
@@ -36,6 +41,8 @@ export interface DetectedColumns {
   revenue: string;
   cost: string;
   description: string | null;
+  /** Site name column, if present. */
+  site: string | null;
   /** Purchase order number column, if present. */
   poNumber: string | null;
   /** Invoice number column, if present. A PO with an invoice number has been billed. */

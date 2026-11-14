@@ -24,6 +24,7 @@ import {
 import type { PnlApiResponse, PnlSuccessResponse } from "@/lib/types";
 import { PnlSummaryCards } from "./PnlSummaryCards";
 import { PoSummaryCards } from "./PoSummaryCards";
+import { SiteFilter } from "./SiteFilter";
 import { MonthlyPnlChart } from "./MonthlyPnlChart";
 import { MonthlyPnlTable } from "./MonthlyPnlTable";
 import { TransactionTable } from "./TransactionTable";
@@ -49,6 +50,7 @@ export function PnlDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [year, setYear] = useState<number | null>(null);
   const [month, setMonth] = useState<string>(ALL_MONTHS);
+  const [selectedSites, setSelectedSites] = useState<string[]>([]);
 
   const load = useCallback(async (refresh: boolean) => {
     if (refresh) setRefreshing(true);
@@ -72,6 +74,27 @@ export function PnlDashboard() {
 
   const years = useMemo(() => (data ? getAvailableYears(data.transactions) : []), [data]);
 
+  const allSites = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    for (const t of data.transactions) if (t.site) set.add(t.site);
+    return [...set].sort((a, b) => a.localeCompare(b, "th", { numeric: true }));
+  }, [data]);
+
+  // Ignore selected sites that disappeared from the sheet after a refresh.
+  const activeSites = useMemo(
+    () => selectedSites.filter((s) => allSites.includes(s)),
+    [selectedSites, allSites],
+  );
+
+  // Every section below works on the site-filtered rows; empty selection = all sites.
+  const transactions = useMemo(() => {
+    if (!data) return [];
+    if (activeSites.length === 0) return data.transactions;
+    const set = new Set(activeSites);
+    return data.transactions.filter((t) => t.site !== null && set.has(t.site));
+  }, [data, activeSites]);
+
   // Default to the current year when it has data, otherwise the latest year.
   // Keep the user's choice across refreshes as long as it still exists.
   const activeYear = useMemo(() => {
@@ -83,28 +106,33 @@ export function PnlDashboard() {
   const selectedMonth = month === ALL_MONTHS ? null : Number(month);
 
   const monthly = useMemo(
-    () => (data ? calculateMonthlyPnl(data.transactions, activeYear) : []),
-    [data, activeYear],
+    () => calculateMonthlyPnl(transactions, activeYear),
+    [transactions, activeYear],
   );
   const summary = useMemo(() => calculateSummary(monthly, selectedMonth), [monthly, selectedMonth]);
   const yearTotal = useMemo(() => calculateTotals(monthly), [monthly]);
   const poSummary = useMemo(
-    () => (data ? calculatePoSummary(data.transactions, data.columns) : null),
-    [data],
+    () => (data ? calculatePoSummary(transactions, data.columns) : null),
+    [data, transactions],
   );
 
   const excluded = useMemo(() => {
-    if (!data) return null;
-    const rows = data.transactions.filter((t) => t.status !== "included");
+    const rows = transactions.filter((t) => t.status !== "included");
     return rows.length ? { count: rows.length, revenue: calculateTotals(rows).revenue } : null;
-  }, [data]);
+  }, [transactions]);
 
   if (loading && !data) return <LoadingState />;
   if (!data) return <ErrorState message={error} onRetry={() => load(false)} />;
 
-  const periodLabel = selectedMonth
-    ? `${MONTH_LONG[selectedMonth - 1]} ${activeYear}`
-    : `Full year ${activeYear}`;
+  const siteLabel =
+    activeSites.length === 0
+      ? ""
+      : activeSites.length === 1
+        ? ` · ${activeSites[0]}`
+        : ` · ${activeSites.length} sites`;
+  const periodLabel =
+    (selectedMonth ? `${MONTH_LONG[selectedMonth - 1]} ${activeYear}` : `Full year ${activeYear}`) +
+    siteLabel;
 
   return (
     <main className="mx-auto w-full min-w-0 max-w-[1400px] space-y-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
@@ -150,6 +178,9 @@ export function PnlDashboard() {
                 ))}
               </SelectContent>
             </Select>
+            {allSites.length > 0 && (
+              <SiteFilter sites={allSites} selected={activeSites} onChange={setSelectedSites} />
+            )}
           </div>
         </div>
 
@@ -183,7 +214,10 @@ export function PnlDashboard() {
       <PnlSummaryCards figures={summary} periodLabel={periodLabel} />
 
       {poSummary && (
-        <PoSummaryCards summary={poSummary} cancelledRows={data.stats.cancelledRows} />
+        <PoSummaryCards
+          summary={poSummary}
+          cancelledRows={transactions.filter((t) => t.status === "cancelled").length}
+        />
       )}
 
       <MonthlyPnlChart rows={monthly} year={activeYear} selectedMonth={selectedMonth} />
@@ -212,7 +246,7 @@ export function PnlDashboard() {
       <TransactionTable
         headers={data.headers}
         columns={data.columns}
-        transactions={data.transactions}
+        transactions={transactions}
         year={activeYear}
         month={selectedMonth}
       />
